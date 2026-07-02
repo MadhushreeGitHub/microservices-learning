@@ -24,21 +24,37 @@ public class ProductServiceApplication {
 class ProductController{
     //pretend this is a database
     private static final Map<Long,Product> PRODUCTS = Map.of(
-            1L, new Product(1L, "Wireless Mouse", 799.00),
-            2L, new Product(2L, "Mechanical Keyboard", 2999.00),
-            3L, new Product(3L, "HD Monitor", 10999.00)
+            1L, new Product(1L, "Wireless Mouse", 799.00, 400, "SUP-101", "check notes"),
+            2L, new Product(2L, "Mechanical Keyboard", 2999.00, 1500, "SUP-102", "low stock"),
+            3L, new Product(3L, "HD Monitor", 10999.00, 5000, "SUP-103", "out of stock")
     );
 
     @GetMapping("/{id}")
-    public Product getProduct(@PathVariable Long id) throws InterruptedException {
+    public ProductResponse getProduct(@PathVariable Long id) throws InterruptedException {
         Product product = PRODUCTS.get(id);
         //Thread.sleep(10000);
         if(product == null){
             throw new RuntimeException("Product not found with id: " + id);
         }
-        return product;
+        return new ProductResponse(product.id(), product.name(), product.price());
     }
 
 }
 
-record Product(Long id, String name, double price){}
+//Internal model
+record Product(
+        Long id,
+        String name,
+        double price,
+        double costPrice, //Internal: how much we pay to supplier
+        String supplierId, //Internal: which supplier
+        String internalNotes //Internal: warehouse comments
+){}
+
+// External contract — what OTHER services see
+
+record ProductResponse(
+        Long id,
+        String name,
+        double price
+){}
