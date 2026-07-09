@@ -1,11 +1,9 @@
 package com.madhushree.productservice;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -21,6 +19,7 @@ public class ProductServiceApplication {
 
 @RestController
 @RequestMapping("/products")
+@Tag(name = "Products", description = "Product catalog operations")
 class ProductController{
     //pretend this is a database
     private static final Map<Long,Product> PRODUCTS = Map.of(
@@ -37,6 +36,16 @@ class ProductController{
             throw new RuntimeException("Product not found with id: " + id);
         }
         return new ProductResponse(product.id(), product.name(), product.price());
+    }
+
+    @GetMapping("/{id}/internal")
+    public Product getInternalProduct(@PathVariable Long id,
+        @RequestHeader(value = "X-Internal-Client", required = false) boolean internalClientHeader) {
+        Product product = PRODUCTS.get(id);
+        if(!internalClientHeader){
+            throw new RuntimeException("This not a Internal Client");
+        }
+        return product;
     }
 
 }
