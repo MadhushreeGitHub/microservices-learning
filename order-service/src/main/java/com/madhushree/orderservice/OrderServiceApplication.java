@@ -51,11 +51,32 @@ public class OrderServiceApplication {
     }
 
     @Bean
+    public Queue orderAnalyticsQueue(){return new Queue("order.analytics.queue", true);}
+
+    @Bean Queue higherValueOrderQueue(){return new Queue("order.high.value.queue", true);}
+
+    @Bean
     public Binding orderPlaceBinding(){
         return BindingBuilder
                 .bind(orderPlacedQueue())
                 .to(orderExchange())
                 .with("order.placed");
+    }
+
+    @Bean
+    public Binding orderAnalyticsBinding(){
+        return BindingBuilder
+                .bind(orderAnalyticsQueue())
+                .to(orderExchange())
+                .with("order.placed");
+    }
+
+    @Bean
+    public Binding higherValueOrderBinding(){
+        return BindingBuilder
+                .bind(higherValueOrderQueue())
+                .to(orderExchange())
+                .with("order.high.value");
     }
 
     @Bean
@@ -124,12 +145,20 @@ class OrderController{
                     request.quantity(),
                     total
             );
+            if(total > 5000 ){
+                rabbitTemplate.convertAndSend(
+                        "order.exchange",
+                        "order.high.value",
+                        event
+                );
 
-            rabbitTemplate.convertAndSend(
-                    "order.exchange",
-                    "order.placed",
-                    event
-            );
+            }else {
+                rabbitTemplate.convertAndSend(
+                        "order.exchange",
+                        "order.placed",
+                        event
+                );
+            }
 
             if (idempotencyKey != null) {
                 idempotencyCache.put(idempotencyKey, response);
